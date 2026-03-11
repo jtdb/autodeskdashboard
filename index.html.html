@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autodesk Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const COLORS = {
+  bg: "#0a0e17",
+  surface: "#111827",
+  surfaceLight: "#1a2332",
+  border: "#1e293b",
+  accent: "#22d3ee",
+  accentDim: "rgba(34,211,238,0.15)",
+  green: "#10b981",
+  greenDim: "rgba(16,185,129,0.15)",
+  amber: "#f59e0b",
+  amberDim: "rgba(245,158,11,0.15)",
+  red: "#ef4444",
+  redDim: "rgba(239,68,68,0.15)",
+  purple: "#a78bfa",
+  purpleDim: "rgba(167,139,250,0.15)",
+  pink: "#f472b6",
+  pinkDim: "rgba(244,114,182,0.15)",
+  text: "#e2e8f0",
+  textDim: "#94a3b8",
+  textMuted: "#64748b",
+  white: "#ffffff",
+};
+
+const segmentColors = ["#22d3ee", "#a78bfa", "#10b981", "#f472b6", "#f59e0b"];
+
+// ---- DATA ----
+const segmentData = {
+  labels: ["AEC", "AutoCAD & LT", "Manufacturing", "M&E", "Other"],
+  fy23: [2278, 1387, 978, 291, 71],
+  fy24: [2580, 1462, 1063, 295, 97],
+  fy25: [2937, 1572, 1189, 315, 118],
+  yoyGrowthFY25: [13.8, 7.5, 11.9, 6.8, 21.6],
+  pctFY25: [47.9, 25.6, 19.4, 5.1, 1.9],
+};
+
+const geoData = [
+  { region: "Americas", rev: 2720, pct: 44.4 },
+  { region: "EMEA", rev: 2310, pct: 37.7 },
+  { region: "APAC", rev: 1110, pct: 18.1 },
+];
+
+const productSuite = [
+  {
+    segment: "AEC (Architecture, Engineering, Construction & Operations)",
+    color: segmentColors[0],
+    products: [
+      { name: "Revit", desc: "Flagship BIM platform for architecture, structure & MEP design", tier: "Core" },
+      { name: "AutoCAD (AEC)", desc: "2D/3D CAD drafting, used across all AEC disciplines", tier: "Core" },
+      { name: "Civil 3D", desc: "Civil engineering design & documentation for infrastructure", tier: "Core" },
+      { name: "Autodesk Construction Cloud", desc: "Cloud platform - Build, Takeoff, BIM Collaborate Pro, Docs", tier: "Growth" },
+      { name: "Forma", desc: "Industry cloud for early-stage planning with AI insights", tier: "Growth" },
+      { name: "Navisworks", desc: "3D coordination, clash detection & project review", tier: "Mature" },
+      { name: "InfraWorks", desc: "Infrastructure concept design & visualization", tier: "Mature" },
+      { name: "Payapps", desc: "Cloud-based construction payment management (acquired FY25)", tier: "Growth" },
+    ],
+  },
+  {
+    segment: "AutoCAD & AutoCAD LT",
+    color: segmentColors[1],
+    products: [
+      { name: "AutoCAD", desc: "Industry-standard 2D/3D CAD - the franchise product since 1982", tier: "Core" },
+      { name: "AutoCAD LT", desc: "Lightweight 2D drafting version at lower price point", tier: "Core" },
+      { name: "AutoCAD Web & Mobile", desc: "Cloud-based access to AutoCAD from any device", tier: "Growth" },
+      { name: "AutoCAD Specialised Toolsets", desc: "Architecture, Electrical, Mechanical, MEP, Plant 3D, Map 3D", tier: "Core" },
+    ],
+  },
+  {
+    segment: "Manufacturing",
+    color: segmentColors[2],
+    products: [
+      { name: "Fusion", desc: "Cloud-based integrated CAD/CAM/CAE/PCB for product design", tier: "Growth" },
+      { name: "Inventor", desc: "Professional 3D mechanical design & engineering", tier: "Core" },
+      { name: "Vault", desc: "Product data management (PDM) for engineering teams", tier: "Mature" },
+      { name: "PowerMill", desc: "Advanced CAM for high-speed & 5-axis CNC machining", tier: "Mature" },
+      { name: "Moldflow", desc: "Injection moulding simulation & analysis", tier: "Mature" },
+      { name: "Netfabb", desc: "Additive manufacturing & 3D printing preparation", tier: "Growth" },
+    ],
+  },
+  {
+    segment: "Media & Entertainment",
+    color: segmentColors[3],
+    products: [
+      { name: "Maya", desc: "3D animation, modelling & VFX - film/TV industry standard", tier: "Core" },
+      { name: "3ds Max", desc: "3D modelling, animation & rendering for design viz & games", tier: "Core" },
+      { name: "Arnold", desc: "Production rendering engine used in major film studios", tier: "Core" },
+      { name: "Flame", desc: "VFX compositing, finishing & editorial for film/broadcast", tier: "Mature" },
+      { name: "Flow Production Tracking", desc: "Production pipeline management (formerly ShotGrid)", tier: "Growth" },
+      { name: "Wonder Dynamics (acquired)", desc: "AI-powered VFX & character animation", tier: "Growth" },
+    ],
+  },
+];
+
+const competitorMap = [
+  {
+    market: "CAD/Drafting",
+    size: "~$12.5B (2024)",
+    cagr: "8.2%",
+    players: [
+      { name: "Autodesk (AutoCAD)", share: "35-40%", position: "Leader" },
+      { name: "Dassault (SolidWorks/CATIA)", share: "~20%", position: "Strong #2" },
+      { name: "Siemens (NX/Solid Edge)", share: "~12%", position: "Enterprise PLM" },
+      { name: "PTC (Creo/Onshape)", share: "~8%", position: "Cloud challenger" },
+      { name: "Hexagon (BricsCAD)", share: "~3%", position: "Low-cost alt" },
+    ],
+  },
+  {
+    market: "BIM Software",
+    size: "~$9.0B (2025)",
+    cagr: "11.3%",
+    players: [
+      { name: "Autodesk (Revit)", share: "~40%", position: "Dominant" },
+      { name: "Nemetschek (Allplan/Archicad)", share: "~15%", position: "Strong in Europe" },
+      { name: "Trimble (Tekla)", share: "~10%", position: "Structural focus" },
+      { name: "Bentley Systems", share: "~10%", position: "Infrastructure" },
+      { name: "Vectorworks", share: "~5%", position: "Niche/landscape" },
+    ],
+  },
+  {
+    market: "Construction Management",
+    size: "~$5.7B (2025)",
+    cagr: "12.8%",
+    players: [
+      { name: "Procore", share: "~20%", position: "Largest pure-play" },
+      { name: "Autodesk (ACC)", share: "~16%", position: "Fast-growing" },
+      { name: "Oracle (Primavera/Aconex)", share: "~10%", position: "Enterprise" },
+      { name: "Trimble (Viewpoint)", share: "~8%", position: "Mid-market" },
+      { name: "PlanGrid/Others", share: "Fragmented", position: "Many niche" },
+    ],
+  },
+  {
+    market: "Manufacturing PLM/CAM",
+    size: "~$55B (PLM total)",
+    cagr: "9.5%",
+    players: [
+      { name: "Dassault Systemes", share: "~25%", position: "PLM leader" },
+      { name: "Siemens Digital Industries", share: "~22%", position: "End-to-end" },
+      { name: "PTC (Windchill/Creo)", share: "~12%", position: "IoT strength" },
+      { name: "Autodesk (Fusion/Inventor)", share: "~5-7%", position: "Mid-market" },
+      { name: "SAP/Others", share: "Fragmented", position: "ERP-adjacent" },
+    ],
+  },
+  {
+    market: "VFX/Animation Software",
+    size: "~$4.5B",
+    cagr: "7.5%",
+    players: [
+      { name: "Autodesk (Maya/3ds Max)", share: "~30%", position: "Studio standard" },
+      { name: "SideFX (Houdini)", share: "~15%", position: "Procedural VFX" },
+      { name: "Blender Foundation", share: "~12%", position: "Open-source" },
+      { name: "Foundry (Nuke/Mari)", share: "~10%", position: "Compositing" },
+      { name: "Epic (Unreal Engine)", share: "Growing", position: "Real-time" },
+    ],
+  },
+];
+
+const endMarkets = [
+  { market: "BIM Software", size: "$9.0B", cagr: "11.3%", forecast: "$15.4B by 2030", driver: "Government mandates, digital twins, sustainability requirements" },
+  { market: "3D CAD Software", size: "$12.5B", cagr: "8.2%", forecast: "$16.3B by 2030", driver: "Cloud migration, AI generative design, SME adoption" },
+  { market: "Construction Technology", size: "$5.7B", cagr: "12.8%", forecast: "$10.3B by 2030", driver: "Labour shortages, automation, BIM mandates on public projects" },
+  { market: "Construction Design Software", size: "$9.9B", cagr: "7.7%", forecast: "$15.4B by 2030", driver: "Digital transformation, cloud collaboration, AR/VR integration" },
+  { market: "VFX & Animation", size: "$4.5B", cagr: "7.5%", forecast: "$7.0B by 2030", driver: "Streaming content demand, real-time engines, AI tools" },
+  { market: "PLM/Manufacturing Software", size: "$55B", cagr: "9.5%", forecast: "$95B by 2030", driver: "Industry 4.0, digital thread, additive manufacturing" },
+];
+
+const keyCustomers = [
+  { name: "TD Synnex (Distributor)", detail: "33% of FY25 revenue - largest channel partner. Transitioning to direct/new transaction model", type: "Channel" },
+  { name: "NASA", detail: "Long-standing user for engineering design and simulation workflows", type: "Aerospace" },
+  { name: "Airbus", detail: "Uses Autodesk manufacturing tools for aerospace design", type: "Aerospace" },
+  { name: "Boeing", detail: "Design and engineering software across programmes", type: "Aerospace" },
+  { name: "BMW", detail: "Manufacturing design and product development workflows", type: "Automotive" },
+  { name: "Disney / ILM", detail: "Maya and 3ds Max for film VFX and animation production", type: "M&E" },
+  { name: "Populous (Architecture)", detail: "Designs major sports stadiums and venues using Revit/BIM", type: "AEC" },
+  { name: "MASS Design Group", detail: "Uses Revit and Civil 3D for sustainable building design", type: "AEC" },
+  { name: "Bouygues", detail: "Construction Cloud for large-scale project management", type: "Construction" },
+  { name: "Fortescue Metals", detail: "Construction Cloud user for mining/resources infrastructure", type: "Resources" },
+];
+
+const keyMetrics = [
+  { label: "FY25 Revenue", value: "$6.13B", change: "+12% YoY" },
+  { label: "FY26E Revenue (Guidance)", value: "~$7.15B", change: "+17% YoY" },
+  { label: "Q3 FY26 Revenue", value: "$1.85B", change: "+18% YoY" },
+  { label: "Recurring Revenue %", value: "97%", change: "Subscription-driven" },
+  { label: "Total Subscriptions", value: "7.79M", change: "+516K YoY" },
+  { label: "NR3 (Net Rev Retention)", value: ">110%", change: "CC basis" },
+  { label: "Non-GAAP Op. Margin", value: "~37.5%", change: "FY26E, +120bps" },
+  { label: "Free Cash Flow (FY26E)", value: "$2.26-2.29B", change: "+116% Q3" },
+  { label: "RPO", value: "$7.4B", change: "+20% YoY" },
+  { label: "Share Buyback (FY26)", value: "~$1.3B", change: "+50% vs FY25" },
+  { label: "Employees", value: "~13,650", change: "9% restructure FY25" },
+  { label: "LT Non-GAAP Op Margin", value: "41% by FY29", change: "Target" },
+];
+
+function Bar({ value, max, color, label, height = 24 }) {
+  const pct = (value / max) * 100;
+  return (
+    <div style={{ marginBottom: 6 }}>
+      {label && <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 2 }}>{label}</div>}
+      <div style={{ background: COLORS.border, borderRadius: 4, height, overflow: "hidden", position: "relative" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: `linear-gradient(90deg, ${color}, ${color}88)`,
+            borderRadius: 4,
+            transition: "width 0.6s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, change, color = COLORS.accent }) {
+  const isPositive = change && (change.startsWith("+") || change.includes("Subscription") || change.includes("CC") || change.includes("Target"));
+  return (
+    <div
+      style={{
+        background: COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 10,
+        padding: "14px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+      }}
+    >
+      <div style={{ fontSize: 11, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
+      {change && (
+        <div style={{ fontSize: 11, color: isPositive ? COLORS.green : COLORS.textDim, fontWeight: 500 }}>{change}</div>
+      )}
+    </div>
+  );
+}
+
+function SectionTitle({ children, subtitle }) {
+  return (
+    <div style={{ marginBottom: 16, marginTop: 8 }}>
+      <h2
+        style={{
+          fontSize: 18,
+          fontWeight: 700,
+          color: COLORS.white,
+          margin: 0,
+          letterSpacing: "-0.02em",
+          borderLeft: `3px solid ${COLORS.accent}`,
+          paddingLeft: 12,
+        }}
+      >
+        {children}
+      </h2>
+      {subtitle && <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, paddingLeft: 15 }}>{subtitle}</div>}
+    </div>
+  );
+}
+
+function TierBadge({ tier }) {
+  const map = {
+    Core: { bg: COLORS.accentDim, color: COLORS.accent },
+    Growth: { bg: COLORS.greenDim, color: COLORS.green },
+    Mature: { bg: COLORS.amberDim, color: COLORS.amber },
+  };
+  const s = map[tier] || map.Core;
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "2px 8px",
+        borderRadius: 20,
+        background: s.bg,
+        color: s.color,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {tier}
+    </span>
+  );
+}
+
+function PositionBadge({ position }) {
+  let bg = COLORS.accentDim,
+    color = COLORS.accent;
+  if (position.includes("Leader") || position.includes("Dominant")) {
+    bg = COLORS.greenDim;
+    color = COLORS.green;
+  } else if (position.includes("Strong") || position.includes("Fast")) {
+    bg = COLORS.accentDim;
+    color = COLORS.accent;
+  } else if (position.includes("challenger") || position.includes("Growing") || position.includes("Cloud")) {
+    bg = COLORS.purpleDim;
+    color = COLORS.purple;
+  }
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "2px 8px",
+        borderRadius: 20,
+        background: bg,
+        color,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {position}
+    </span>
+  );
+}
+
+const tabs = ["Overview", "Product Suite", "Pricing", "Competition", "End Markets", "Customers", "Financials"];
+
+  const [activeTab, setActiveTab] = useState("Overview");
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: COLORS.bg,
+        color: COLORS.text,
+        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+        padding: 0,
+      }}
+    >
+      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+      {/* Header */}
+      <div
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.surface} 0%, ${COLORS.bg} 100%)`,
+          borderBottom: `1px solid ${COLORS.border}`,
+          padding: "24px 24px 0",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: COLORS.white, margin: 0, letterSpacing: "-0.03em" }}>
+                AUTODESK
+              </h1>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: COLORS.accentDim,
+                  color: COLORS.accent,
+                  padding: "3px 10px",
+                  borderRadius: 20,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                NASDAQ: ADSK
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: COLORS.textDim, maxWidth: 600 }}>
+              Initiation Coverage - Design & Make Software Platform | AEC, Manufacturing, M&E
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted }}>FY ends January 31 | Prepared Feb 2026</div>
+            <div style={{ fontSize: 11, color: COLORS.textMuted }}>CEO: Andrew Anagnost | HQ: San Francisco</div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 0, marginTop: 20, overflowX: "auto" }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "10px 20px",
+                fontSize: 13,
+                fontWeight: activeTab === tab ? 700 : 500,
+                color: activeTab === tab ? COLORS.accent : COLORS.textMuted,
+                background: "none",
+                border: "none",
+                borderBottom: activeTab === tab ? `2px solid ${COLORS.accent}` : "2px solid transparent",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.2s",
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: "24px", maxWidth: 1200, margin: "0 auto" }}>
+        {activeTab === "Overview" && <OverviewTab />}
+        {activeTab === "Product Suite" && <ProductTab />}
+        {activeTab === "Pricing" && <PricingTab />}
+        {activeTab === "Competition" && <CompetitionTab />}
+        {activeTab === "End Markets" && <EndMarketsTab />}
+        {activeTab === "Customers" && <CustomersTab />}
+        {activeTab === "Financials" && <FinancialsTab />}
+      </div>
+    </div>
+  );
+}
+
+function OverviewTab() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Key Metrics Grid */}
+      <SectionTitle subtitle="FY25 actuals and FY26 guidance (as at Q3 FY26, Nov 2025)">Key Performance Metrics</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 10 }}>
+        {keyMetrics.map((m) => (
+          <MetricCard key={m.label} {...m} />
+        ))}
+      </div>
+
+      {/* Revenue Split */}
+      <SectionTitle subtitle="FY25 (ended Jan 2025) - Total $6.13B">Revenue by Segment</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>
+            Segment Revenue ($M) & Mix
+          </div>
+          {segmentData.labels.map((label, i) => (
+            <div key={label} style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.white }}>{label}</span>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: segmentColors[i], fontFamily: "'JetBrains Mono', monospace" }}>
+                    ${segmentData.fy25[i].toLocaleString()}M
+                  </span>
+                  <span style={{ fontSize: 11, color: COLORS.textMuted, width: 40, textAlign: "right" }}>
+                    {segmentData.pctFY25[i]}%
+                  </span>
+                </div>
+              </div>
+              <Bar value={segmentData.fy25[i]} max={3000} color={segmentColors[i]} height={18} />
+            </div>
+          ))}
+        </div>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>
+            Geographic Revenue & YoY Segment Growth
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            {geoData.map((g, i) => {
+              const cols = [COLORS.accent, COLORS.purple, COLORS.green];
+              return (
+                <div key={g.region} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.white }}>{g.region}</span>
+                    <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: cols[i] }}>
+                      ${(g.rev / 1000).toFixed(2)}B ({g.pct}%)
+                    </span>
+                  </div>
+                  <Bar value={g.rev} max={3000} color={cols[i]} height={14} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 16, marginTop: 8 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+              FY25 YoY Growth by Segment
+            </div>
+            {segmentData.labels.map((label, i) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                <span style={{ fontSize: 12, color: COLORS.textDim }}>{label}</span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: COLORS.green,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  +{segmentData.yoyGrowthFY25[i]}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Business Model Summary */}
+      <SectionTitle>Investment Thesis Summary</SectionTitle>
+      <div
+        style={{
+          background: COLORS.surface,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 10,
+          padding: 20,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 20,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.green, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>
+            Bull Case
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 13, lineHeight: 1.7, color: COLORS.textDim }}>
+            <li>97% recurring revenue with NR3 > 110% - exceptional visibility</li>
+            <li>Dominant AEC/BIM franchise (~40% share) with BIM mandates accelerating</li>
+            <li>Make business growing 25%+ - cloud-first construction & manufacturing</li>
+            <li>Margin expansion runway to 41% non-GAAP by FY29</li>
+            <li>AI-powered platform (Forma, Fusion) deepening moats</li>
+            <li>$7.4B RPO provides multi-year revenue visibility</li>
+          </ul>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>
+            Bear Case / Risks
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 13, lineHeight: 1.7, color: COLORS.textDim }}>
+            <li>Pricing pushback from architects (open letter controversy)</li>
+            <li>PLM incumbents (Dassault, Siemens) limit manufacturing upside</li>
+            <li>Procore & Trimble competitive pressure in construction</li>
+            <li>Open-source BIM/IFC standards could erode lock-in</li>
+            <li>Macro sensitivity - construction/infrastructure cyclicality</li>
+            <li>Go-to-market transition execution risk (new transaction model)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductTab() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SectionTitle subtitle="Organised by segment with lifecycle classification (Core = franchise, Growth = high-investment area, Mature = cash cow)">
+        Product Suite by Segment
+      </SectionTitle>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+        <TierBadge tier="Core" /> <span style={{ fontSize: 11, color: COLORS.textDim, marginRight: 12 }}>Franchise products</span>
+        <TierBadge tier="Growth" /> <span style={{ fontSize: 11, color: COLORS.textDim, marginRight: 12 }}>High-investment areas</span>
+        <TierBadge tier="Mature" /> <span style={{ fontSize: 11, color: COLORS.textDim }}>Cash cow / legacy</span>
+      </div>
+      {productSuite.map((seg) => (
+        <div
+          key={seg.segment}
+          style={{
+            background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 10,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "14px 20px",
+              borderBottom: `1px solid ${COLORS.border}`,
+              background: `linear-gradient(90deg, ${seg.color}15 0%, transparent 60%)`,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <div style={{ width: 4, height: 20, borderRadius: 2, background: seg.color }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.white }}>{seg.segment}</span>
+          </div>
+          <div style={{ padding: "8px 0" }}>
+            {seg.products.map((p) => (
+              <div
+                key={p.name}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "180px 1fr auto",
+                  gap: 12,
+                  padding: "10px 20px",
+                  alignItems: "center",
+                  borderBottom: `1px solid ${COLORS.border}22`,
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.white }}>{p.name}</span>
+                <span style={{ fontSize: 12, color: COLORS.textDim }}>{p.desc}</span>
+                <TierBadge tier={p.tier} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <SectionTitle subtitle="How product segments map to revenue streams">Design vs Make Business Split</SectionTitle>
+      <div
+        style={{
+          background: COLORS.surface,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 10,
+          padding: 20,
+        }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.accent, marginBottom: 8 }}>Design Business - $5.10B (FY25)</div>
+            <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.6 }}>
+              Traditional desktop and cloud-connected design tools. Includes Revit, AutoCAD, Inventor, Maya, 3ds Max, Civil 3D. +10% YoY growth. This is the mature, high-margin franchise.
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.green, marginBottom: 8 }}>Make Business - $654M (FY25)</div>
+            <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.6 }}>
+              Cloud-native subscriptions: Autodesk Build, BIM Collaborate Pro, BuildingConnected, Fusion, Flow Production Tracking. +25% YoY growth. Key growth vector and margin expansion driver.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingTab() {
+  const [filterSegment, setFilterSegment] = useState("All");
+  const [sortBy, setSortBy] = useState("segment");
+
+  const products = [
+    // AEC Segment
+    { name: "AEC Collection", segment: "AEC", type: "Collection", annual: 3675, monthly: 460, includes: "Revit, AutoCAD, Civil 3D, Forma, Navisworks, InfraWorks, ReCap Pro, 3ds Max", tier: "flagship", note: "Best value for full AEC workflow" },
+    { name: "Revit", segment: "AEC", type: "Standalone", annual: 3005, monthly: 375, includes: "Full BIM, MEP, structural, worksharing", tier: "core", note: "Core BIM platform" },
+    { name: "Civil 3D", segment: "AEC", type: "Standalone", annual: 2870, monthly: 360, includes: "Civil engineering design & documentation", tier: "core" },
+    { name: "BIM Collaborate Pro", segment: "AEC", type: "Cloud Add-on", annual: 925, monthly: 115, includes: "Cloud co-authoring for Revit, Civil 3D, Plant 3D", tier: "addon" },
+    { name: "Forma Site Design", segment: "AEC", type: "Standalone", annual: 1550, monthly: 195, includes: "AI-powered pre-design & site analysis", tier: "growth", note: "AI/cloud-native — high growth" },
+    { name: "Navisworks Simulate", segment: "AEC", type: "Standalone", annual: 1145, monthly: 145, includes: "Clash detection, 5D analysis, simulation", tier: "core" },
+    { name: "Revit LT", segment: "AEC", type: "Standalone", annual: 560, monthly: 70, includes: "Simplified architectural BIM", tier: "entry" },
+    { name: "AutoCAD Revit LT Suite", segment: "AEC", type: "Bundle", annual: 680, monthly: 85, includes: "Revit LT + AutoCAD LT", tier: "entry", note: "Entry-level BIM bundle" },
+
+    // AutoCAD Segment
+    { name: "AutoCAD", segment: "AutoCAD", type: "Standalone", annual: 2095, monthly: 260, includes: "2D/3D CAD + 7 specialized toolsets + apps", tier: "flagship", note: "Flagship CAD — incl. all toolsets" },
+    { name: "AutoCAD LT", segment: "AutoCAD", type: "Standalone", annual: 530, monthly: 65, includes: "2D drafting & documentation only", tier: "entry" },
+    { name: "AutoCAD Web", segment: "AutoCAD", type: "Cloud", annual: 100, monthly: 10, includes: "Browser/mobile DWG editing", tier: "entry", note: "Lowest price point" },
+
+    // Manufacturing Segment
+    { name: "PD&M Collection", segment: "Manufacturing", type: "Collection", annual: 3375, monthly: 420, includes: "Inventor, AutoCAD, Fusion, Vault, Nastran, CAM, HSM, FeatureCAM", tier: "flagship", note: "Best value for manufacturing" },
+    { name: "Inventor", segment: "Manufacturing", type: "Standalone", annual: 2585, monthly: 325, includes: "3D mechanical design, simulation, visualization", tier: "core" },
+    { name: "Fusion", segment: "Manufacturing", type: "Standalone", annual: 680, monthly: 85, includes: "Cloud CAD/CAM/CAE/PCB — integrated platform", tier: "growth", note: "Cloud-native — strategic growth product" },
+    { name: "Vault Professional", segment: "Manufacturing", type: "Standalone", annual: 800, monthly: null, includes: "PDM for engineering data management", tier: "core" },
+    { name: "NavPack Design", segment: "Manufacturing", type: "Standalone", annual: 3155, monthly: null, includes: "Real-time performance predictions for naval design", tier: "niche" },
+
+    // M&E Segment
+    { name: "M&E Collection", segment: "M&E", type: "Collection", annual: 2790, monthly: 350, includes: "Maya, 3ds Max, Arnold, MotionBuilder, Mudbox, Golaem", tier: "flagship", note: "Best value for VFX/games studios" },
+    { name: "Maya", segment: "M&E", type: "Standalone", annual: 2010, monthly: 250, includes: "3D animation, modeling, simulation, rendering", tier: "core" },
+    { name: "3ds Max", segment: "M&E", type: "Standalone", annual: 2010, monthly: 250, includes: "3D modeling, animation, rendering for games/viz", tier: "core" },
+    { name: "Flame", segment: "M&E", type: "Standalone", annual: 5215, monthly: 650, includes: "VFX, compositing, advanced graphics, color", tier: "premium", note: "Highest-priced standalone product" },
+    { name: "Arnold", segment: "M&E", type: "Standalone", annual: 430, monthly: 55, includes: "Global illumination rendering", tier: "addon" },
+    { name: "Flow Production Tracking", segment: "M&E", type: "Cloud", annual: 390, monthly: 50, includes: "Review & production tracking for VFX/games", tier: "addon" },
+    { name: "Flow Studio", segment: "M&E", type: "Cloud", annual: 360, monthly: 45, includes: "AI-powered VFX — mocap, tracking, compositing", tier: "growth", note: "Wonder Dynamics AI — newest product" },
+    { name: "Mudbox", segment: "M&E", type: "Standalone", annual: 105, monthly: null, includes: "Digital painting & sculpting", tier: "entry" },
+
+    // Other
+    { name: "ReCap Pro", segment: "Other", type: "Standalone", annual: 405, monthly: 50, includes: "Reality capture & 3D scanning", tier: "addon" },
+    { name: "Advance Steel", segment: "AEC", type: "Standalone", annual: 2390, monthly: null, includes: "Steel detailing & fabrication", tier: "niche" },
+  ];
+
+  const tierColors = { flagship: COLORS.accent, core: COLORS.green, growth: "#a78bfa", addon: COLORS.textMuted, entry: "#64748b", premium: "#f59e0b", niche: "#6b7280" };
+  const tierLabels = { flagship: "FLAGSHIP", core: "CORE", growth: "GROWTH", addon: "ADD-ON", entry: "ENTRY", premium: "PREMIUM", niche: "NICHE" };
+
+  const segments = ["All", "AEC", "AutoCAD", "Manufacturing", "M&E", "Other"];
+  const filtered = filterSegment === "All" ? products : products.filter(p => p.segment === filterSegment);
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "price") return b.annual - a.annual;
+    if (sortBy === "segment") return a.segment.localeCompare(b.segment) || b.annual - a.annual;
+    return a.name.localeCompare(b.name);
+  });
+
+  const collectionProducts = products.filter(p => p.type === "Collection");
+  const avgBySegment = segments.filter(s => s !== "All").map(seg => {
+    const segProducts = products.filter(p => p.segment === seg && p.type !== "Collection");
+    const avg = segProducts.length ? Math.round(segProducts.reduce((s, p) => s + p.annual, 0) / segProducts.length) : 0;
+    return { segment: seg, avg, count: segProducts.length, min: Math.min(...segProducts.map(p => p.annual)), max: Math.max(...segProducts.map(p => p.annual)) };
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Pricing Strategy Summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {[
+          { label: "Price Range", value: "$100 – $5,215/yr", sub: "AutoCAD Web to Flame" },
+          { label: "Median Annual Price", value: `$${Math.round(products.map(p=>p.annual).sort((a,b)=>a-b)[Math.floor(products.length/2)]).toLocaleString()}`, sub: `Across ${products.length} products` },
+          { label: "Collections (Best Value)", value: "$2,790 – $3,675/yr", sub: "40-70% savings vs standalone" },
+          { label: "Pricing Model", value: "100% Subscription", sub: "Monthly / Annual / 3-Year" },
+        ].map(m => (
+          <div key={m.label} style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 10, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{m.label}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}</div>
+            <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 2 }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Collections Comparison - the key bundles */}
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.white, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: COLORS.accent }}>★</span> Collections vs Standalone Savings
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          {collectionProducts.map(c => {
+            const standaloneTotal = c.name === "AEC Collection" ? 3005 + 2095 + 2870 + 1550 + 1145 : c.name === "PD&M Collection" ? 2585 + 2095 + 680 : 2010 + 2010 + 430;
+            const savings = standaloneTotal - c.annual;
+            const pct = Math.round((savings / standaloneTotal) * 100);
+            return (
+              <div key={c.name} style={{ background: COLORS.surface, borderRadius: 8, padding: 14, border: `1px solid ${COLORS.accent}33` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent, marginBottom: 6 }}>{c.name}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>${c.annual.toLocaleString()}<span style={{ fontSize: 11, color: COLORS.textMuted }}>/yr</span></div>
+                <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 4, marginBottom: 8, lineHeight: 1.4 }}>{c.includes}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderTop: `1px solid ${COLORS.border}` }}>
+                  <span style={{ fontSize: 10, color: COLORS.textMuted }}>vs Standalone</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.green, fontFamily: "'JetBrains Mono', monospace" }}>Save ${savings.toLocaleString()} ({pct}%)</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Segment Price Ranges */}
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.white, marginBottom: 12 }}>Average Price by Segment (excl. Collections)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          {avgBySegment.filter(s => s.count > 0).map(s => (
+            <div key={s.segment} style={{ background: COLORS.surface, borderRadius: 8, padding: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textDim, marginBottom: 4 }}>{s.segment}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>${s.avg.toLocaleString()}</div>
+              <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2 }}>${s.min.toLocaleString()} – ${s.max.toLocaleString()} range</div>
+              <div style={{ fontSize: 10, color: COLORS.textMuted }}>{s.count} products</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter & Sort Controls */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>FILTER:</div>
+        {segments.map(seg => (
+          <button key={seg} onClick={() => setFilterSegment(seg)} style={{ padding: "4px 12px", borderRadius: 6, border: `1px solid ${filterSegment === seg ? COLORS.accent : COLORS.border}`, background: filterSegment === seg ? COLORS.accent + "22" : "transparent", color: filterSegment === seg ? COLORS.accent : COLORS.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{seg}</button>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600 }}>SORT:</span>
+          {["segment", "price", "name"].map(s => (
+            <button key={s} onClick={() => setSortBy(s)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${sortBy === s ? COLORS.accent : COLORS.border}`, background: sortBy === s ? COLORS.accent + "22" : "transparent", color: sortBy === s ? COLORS.accent : COLORS.textMuted, fontSize: 10, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>{s}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Full Product Price Table */}
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: COLORS.surface }}>
+              {["Product", "Segment", "Type", "Annual", "Monthly", "Monthly Eff.", "Tier", ""].map(h => (
+                <th key={h} style={{ padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.8, borderBottom: `1px solid ${COLORS.border}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p, i) => (
+              <tr key={p.name} style={{ borderBottom: `1px solid ${COLORS.border}22`, background: i % 2 === 0 ? "transparent" : COLORS.surface + "44" }}>
+                <td style={{ padding: "10px 12px", fontWeight: 700, color: COLORS.white }}>
+                  {p.name}
+                  {p.note && <div style={{ fontSize: 9, color: COLORS.textMuted, fontWeight: 400, marginTop: 1 }}>{p.note}</div>}
+                </td>
+                <td style={{ padding: "10px 12px", color: COLORS.textDim, fontSize: 11 }}>{p.segment}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: p.type === "Collection" ? COLORS.accent + "22" : p.type === "Cloud" ? "#a78bfa22" : COLORS.surface, color: p.type === "Collection" ? COLORS.accent : p.type === "Cloud" ? "#a78bfa" : COLORS.textMuted, fontWeight: 600 }}>{p.type}</span>
+                </td>
+                <td style={{ padding: "10px 12px", fontWeight: 800, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>${p.annual.toLocaleString()}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.textDim, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{p.monthly ? `$${p.monthly}` : "—"}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.green, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>${Math.round(p.annual / 12)}</td>
+                <td style={{ padding: "10px 12px" }}>
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: (tierColors[p.tier] || COLORS.textMuted) + "22", color: tierColors[p.tier] || COLORS.textMuted, fontWeight: 700 }}>{tierLabels[p.tier] || p.tier}</span>
+                </td>
+                <td style={{ padding: "10px 12px" }}>
+                  <div style={{ width: Math.max(4, Math.round((p.annual / 5215) * 80)), height: 6, borderRadius: 3, background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.purple})` }} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pricing Strategy Notes */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent, marginBottom: 8 }}>Pricing Strategy</div>
+          {[
+            "100% subscription since Aug 2016 — no perpetual licenses",
+            "3-tier term structure: Monthly (premium), Annual (standard), 3-Year (lock-in)",
+            "Collections bundle 5-10 products at 40-70% discount vs standalone",
+            "Flex pay-as-you-go tokens for occasional users",
+            "Free tier: 30-day trials + full educational access",
+            "Enterprise/Premium plans via sales team (custom pricing)",
+          ].map((t, i) => (
+            <div key={i} style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid ${COLORS.accent}33`, lineHeight: 1.4 }}>{t}</div>
+          ))}
+        </div>
+        <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b", marginBottom: 8 }}>2025 Price Changes & Trends</div>
+          {[
+            "Jan 2025: 5% annual renewal discount eliminated",
+            "Jan 2025: Multi-year renewal discount cut from 10% → 5%",
+            "May 2025: Trade-in subs (M2S/TNU) get +5% global price hike",
+            "May 2025: Trade-in subs restricted to annual terms only",
+            "Avg ~5-7% annual price increases across portfolio",
+            "New transaction model replacing TD Synnex distribution",
+          ].map((t, i) => (
+            <div key={i} style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 4, paddingLeft: 10, borderLeft: `2px solid #f59e0b33`, lineHeight: 1.4 }}>{t}</div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 12 }}>
+        <div style={{ fontSize: 10, color: COLORS.textMuted, lineHeight: 1.5 }}>
+          <strong style={{ color: COLORS.textDim }}>Note:</strong> All prices are US list prices (USD) per user/year as of March 2026 from autodesk.com. Actual enterprise pricing varies. 3-year terms available for most products at same effective annual rate. Monthly pricing carries ~25-35% premium over annualized rate. Government pricing differs.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetitionTab() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SectionTitle subtitle="Competitive positioning across each addressable market Autodesk participates in">
+        Competitive Landscape by Market
+      </SectionTitle>
+      {competitorMap.map((mkt) => (
+        <div
+          key={mkt.market}
+          style={{
+            background: COLORS.surface,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 10,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "14px 20px",
+              borderBottom: `1px solid ${COLORS.border}`,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 15, fontWeight: 700, color: COLORS.white }}>{mkt.market}</span>
+            <div style={{ display: "flex", gap: 16 }}>
+              <span style={{ fontSize: 12, color: COLORS.textDim }}>
+                TAM: <span style={{ color: COLORS.accent, fontWeight: 600 }}>{mkt.size}</span>
+              </span>
+              <span style={{ fontSize: 12, color: COLORS.textDim }}>
+                CAGR: <span style={{ color: COLORS.green, fontWeight: 600 }}>{mkt.cagr}</span>
+              </span>
+            </div>
+          </div>
+          <div style={{ padding: "4px 0" }}>
+            {mkt.players.map((p, i) => {
+              const isAdsk = p.name.includes("Autodesk");
+              return (
+                <div
+                  key={p.name}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "250px 100px auto",
+                    gap: 12,
+                    padding: "10px 20px",
+                    alignItems: "center",
+                    background: isAdsk ? COLORS.accentDim : "transparent",
+                    borderLeft: isAdsk ? `3px solid ${COLORS.accent}` : "3px solid transparent",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: isAdsk ? 700 : 500, color: isAdsk ? COLORS.white : COLORS.textDim }}>
+                    {p.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: COLORS.white,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    {p.share}
+                  </span>
+                  <PositionBadge position={p.position} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EndMarketsTab() {
+  const [activeMarket, setActiveMarket] = useState("AEC");
+  const marketTabs = ["AEC", "Manufacturing", "M&E"];
+
+  const aecVerticals = [
+    { vertical: "Commercial Real Estate", tam: "$2.8B", cagr: "10.5%", adskProducts: "Revit, Construction Cloud, Forma", penetration: "High", examples: "Office towers, retail, mixed-use", keyPlayers: "Brookfield, CBRE, JLL, Hines, Related Cos", drivers: "Hybrid work redesigns, adaptive reuse, data center boom" },
+    { vertical: "Infrastructure & Transportation", tam: "$2.4B", cagr: "13.2%", adskProducts: "Civil 3D, InfraWorks, Construction Cloud", penetration: "High", examples: "Roads, bridges, rail, airports, tunnels", keyPlayers: "Bechtel, Fluor, AECOM, Jacobs, WSP", drivers: "US Infrastructure Act ($1.2T), EU Green Deal, India NIP ($1.4T)" },
+    { vertical: "Residential Construction", tam: "$1.5B", cagr: "9.8%", adskProducts: "Revit, AutoCAD, Construction Cloud", penetration: "Medium", examples: "Single-family, multi-family, modular", keyPlayers: "Lennar, D.R. Horton, Skanska, Bouygues", drivers: "Housing shortages globally, modular/prefab growth, offsite mfg" },
+    { vertical: "Water & Utilities", tam: "$1.1B", cagr: "11.5%", adskProducts: "InfoWorks, Civil 3D, InfoAsset", penetration: "Medium", examples: "Water treatment, distribution, stormwater", keyPlayers: "Veolia, Suez, Thames Water, municipal agencies", drivers: "Aging infrastructure, climate adaptation, EPA mandates" },
+    { vertical: "Architecture & Design", tam: "$2.2B", cagr: "8.5%", adskProducts: "Revit, Forma, AutoCAD, 3ds Max", penetration: "Dominant", examples: "Building design, visualization, master planning", keyPlayers: "Gensler, HOK, SOM, Foster+Partners, BIG, Zaha Hadid", drivers: "BIM mandates, sustainability regs, AI-assisted design" },
+    { vertical: "Heavy/Industrial Construction", tam: "$0.8B", cagr: "12.0%", adskProducts: "Construction Cloud, Navisworks, AutoCAD Plant 3D", penetration: "Growing", examples: "Power plants, refineries, manufacturing facilities", keyPlayers: "Fluor, KBR, McDermott, Samsung E&C", drivers: "Energy transition capex, reshoring of manufacturing" },
+  ];
+
+  const mfgVerticals = [
+    { vertical: "Automotive & Mobility", tam: "$8.5B", cagr: "10.2%", adskProducts: "VRED, Alias, Fusion, Inventor", penetration: "Low-Med", examples: "Vehicle design, powertrain, EV components", keyPlayers: "BMW, Kia, Honda, GM, Toyota, Tesla", drivers: "EV transition, generative design, lightweighting" },
+    { vertical: "Aerospace & Defence", tam: "$6.2B", cagr: "8.8%", adskProducts: "Inventor, Fusion, PowerMill, Nastran", penetration: "Low", examples: "Airframe components, MRO, space systems", keyPlayers: "Airbus, Boeing, Lockheed Martin, SpaceX, Northrop", drivers: "Defence spending, space commercialisation, digital thread" },
+    { vertical: "Industrial Machinery", tam: "$12B", cagr: "9.5%", adskProducts: "Inventor, AutoCAD Mechanical, Vault, Fusion", penetration: "Medium", examples: "CNC machines, robotics, material handling, pumps", keyPlayers: "Siemens, ABB, Fanuc, Caterpillar, John Deere", drivers: "Factory automation, Industry 4.0, reshoring" },
+    { vertical: "Consumer Products", tam: "$4.5B", cagr: "11.0%", adskProducts: "Fusion, Inventor, Moldflow", penetration: "Medium", examples: "Electronics, appliances, packaging, furniture", keyPlayers: "Dyson, Nike, Samsung, IKEA, Electrolux", drivers: "Rapid prototyping, DTC brands, sustainability" },
+    { vertical: "Building Products & Fabrication", tam: "$3.2B", cagr: "8.0%", adskProducts: "Inventor, Advance Steel, Fabrication CAMduct", penetration: "Medium", examples: "Steel, HVAC, prefab panels, curtain wall", keyPlayers: "Nucor, ArcelorMittal, Kingspan, Hilti", drivers: "Offsite construction, BIM-to-fabrication, automation" },
+    { vertical: "Medical Devices", tam: "$2.8B", cagr: "12.5%", adskProducts: "Fusion, Inventor, Netfabb (additive)", penetration: "Low", examples: "Implants, surgical instruments, prosthetics", keyPlayers: "Medtronic, Stryker, Smith & Nephew, Zimmer Biomet", drivers: "3D printing, patient-specific devices, digital twins" },
+  ];
+
+  const meVerticals = [
+    { vertical: "Film VFX", tam: "$1.8B", cagr: "7.5%", adskProducts: "Maya, Flame, Arnold, MotionBuilder", penetration: "Dominant", examples: "Feature film CGI, compositing, performance capture", keyPlayers: "ILM, Wētā FX, Framestore, Digital Domain, DNEG", drivers: "Streaming content demand, virtual production, AI VFX" },
+    { vertical: "Animation (Film & TV)", tam: "$1.2B", cagr: "8.0%", adskProducts: "Maya, 3ds Max, Arnold", penetration: "Dominant", examples: "Animated features, TV series, shorts", keyPlayers: "Pixar, Disney, DreamWorks, Sony Pictures Animation, Animal Logic", drivers: "Streaming wars, global audience growth, IP franchises" },
+    { vertical: "Game Development", tam: "$2.5B", cagr: "9.5%", adskProducts: "Maya, 3ds Max, Mudbox", penetration: "High", examples: "AAA character/environment art, cinematics", keyPlayers: "EA, Ubisoft, Naughty Dog, Rockstar, Blizzard, Epic", drivers: "AAA budgets rising, live service games, UGC" },
+    { vertical: "Arch Viz & Product Viz", tam: "$0.8B", cagr: "11.0%", adskProducts: "3ds Max, Arnold, VRED, Twinmotion", penetration: "High", examples: "Photorealistic rendering for real estate & products", keyPlayers: "Property developers, automotive OEMs, agencies", drivers: "Real-time rendering, VR/AR experiences, configurators" },
+    { vertical: "TV & Streaming Post-Production", tam: "$0.6B", cagr: "6.5%", adskProducts: "Flame, Flow Production Tracking", penetration: "High", examples: "Finishing, colour grading, episodic VFX", keyPlayers: "Netflix, HBO, Amazon, BBC, post houses", drivers: "Volume of episodic content, 4K/HDR standards" },
+  ];
+
+  const activeVerticals = activeMarket === "AEC" ? aecVerticals : activeMarket === "Manufacturing" ? mfgVerticals : meVerticals;
+  const totalTAM = activeVerticals.reduce((s, v) => s + parseFloat(v.tam.replace("$", "").replace("B", "")), 0).toFixed(1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Market Summary Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        {[
+          { label: "AEC Addressable Market", value: "$10.8B", sub: "6 verticals, 8.5-13.2% CAGR", color: COLORS.accent },
+          { label: "Manufacturing Addressable Market", value: "$37.2B", sub: "6 verticals, 8.0-12.5% CAGR", color: COLORS.green },
+          { label: "M&E Addressable Market", value: "$6.9B", sub: "5 verticals, 6.5-11.0% CAGR", color: COLORS.purple },
+        ].map(m => (
+          <div key={m.label} style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 10, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{m.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}</div>
+            <div style={{ fontSize: 10, color: COLORS.textDim, marginTop: 2 }}>{m.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Market Segment Filter */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {marketTabs.map(tab => (
+          <button key={tab} onClick={() => setActiveMarket(tab)} style={{ padding: "8px 20px", borderRadius: 8, border: `1px solid ${activeMarket === tab ? COLORS.accent : COLORS.border}`, background: activeMarket === tab ? COLORS.accent + "22" : "transparent", color: activeMarket === tab ? COLORS.accent : COLORS.textMuted, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{tab} — ${totalTAM}B TAM</button>
+        ))}
+      </div>
+
+      {/* Vertical Detail Table */}
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+          <thead>
+            <tr style={{ background: COLORS.surface }}>
+              {["Vertical", "TAM", "CAGR", "ADSK Penetration", "Key Customers / Players", "Growth Drivers"].map(h => (
+                <th key={h} style={{ padding: "10px 10px", textAlign: "left", fontSize: 9, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.8, borderBottom: `1px solid ${COLORS.border}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {activeVerticals.map((v, i) => (
+              <tr key={v.vertical} style={{ borderBottom: `1px solid ${COLORS.border}22`, background: i % 2 === 0 ? "transparent" : COLORS.surface + "44" }}>
+                <td style={{ padding: "10px", fontWeight: 700, color: COLORS.white, minWidth: 140 }}>
+                  {v.vertical}
+                  <div style={{ fontSize: 9, color: COLORS.textMuted, fontWeight: 400, marginTop: 2 }}>{v.adskProducts}</div>
+                </td>
+                <td style={{ padding: "10px", fontWeight: 800, color: COLORS.accent, fontFamily: "'JetBrains Mono', monospace" }}>{v.tam}</td>
+                <td style={{ padding: "10px", fontWeight: 700, color: COLORS.green, fontFamily: "'JetBrains Mono', monospace" }}>{v.cagr}</td>
+                <td style={{ padding: "10px" }}>
+                  <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 4, fontWeight: 700, background: v.penetration === "Dominant" ? COLORS.accent + "22" : v.penetration === "High" ? COLORS.green + "22" : v.penetration === "Medium" ? "#f59e0b22" : "#ef444422", color: v.penetration === "Dominant" ? COLORS.accent : v.penetration === "High" ? COLORS.green : v.penetration === "Medium" ? "#f59e0b" : "#ef4444" }}>{v.penetration}</span>
+                </td>
+                <td style={{ padding: "10px", color: COLORS.textDim, fontSize: 10, lineHeight: 1.4, maxWidth: 200 }}>{v.keyPlayers}</td>
+                <td style={{ padding: "10px", color: COLORS.textDim, fontSize: 10, lineHeight: 1.4, maxWidth: 200 }}>{v.drivers}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Secular Tailwinds */}
+      <SectionTitle subtitle="Structural trends supporting Autodesk's growth">Key Secular Tailwinds</SectionTitle>
+      <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          {[
+            { title: "Government BIM Mandates", desc: "UK, Singapore, Hong Kong, EU all mandating BIM on public projects. US FHWA standardising BIM objects. India targeting 100% BIM by 2030." },
+            { title: "Global Infrastructure Spend", desc: "US IIJA ($1.2T), EU Green Deal (€1T), India NIP ($1.4T), Saudi Vision 2030 ($3.3T) driving massive capital investment." },
+            { title: "Labour Shortages", desc: "80%+ of NA contractors report skilled labour shortages. 4M construction worker gap in US by 2030. Driving automation & tech adoption." },
+            { title: "AI & Generative Design", desc: "AI copilots for drafting, clash detection, estimation, CAM toolpathing. GM used generative design to make EV parts 40% lighter." },
+            { title: "EV & Energy Transition", desc: "$1.3T+ global EV investment by 2030. Battery gigafactories, charging infra, grid modernisation all need ADSK tools." },
+            { title: "Cloud & Digital Twins", desc: "Cloud BIM growing 18.5% CAGR. Digital twins for lifecycle mgmt, predictive maintenance, ESG tracking across built environment." },
+          ].map((t) => (
+            <div key={t.title} style={{ padding: 12, background: COLORS.surfaceLight, borderRadius: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent, marginBottom: 6 }}>{t.title}</div>
+              <div style={{ fontSize: 11, color: COLORS.textDim, lineHeight: 1.5 }}>{t.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CustomersTab() {
+  const [activeSegment, setActiveSegment] = useState("All");
+  const segments = ["All", "Architecture", "Construction", "Manufacturing", "M&E", "Infrastructure"];
+
+  const customers = [
+    // Architecture — confirmed Revit/BIM users
+    { name: "Gensler", segment: "Architecture", products: "Revit, AutoCAD, Forma", detail: "World's largest arch firm by revenue (~$2B). 6,000+ designers globally. Heavy Revit user.", size: "Enterprise", region: "Global" },
+    { name: "HOK", segment: "Architecture", products: "Revit, AutoCAD", detail: "Early Revit adopter. ~1,700 staff. Recently partnered with BricsCAD but still Revit-dependent.", size: "Enterprise", region: "Global" },
+    { name: "Foster + Partners", segment: "Architecture", products: "Revit, AutoCAD, Rhino + ADSK", detail: "Norman Foster's firm. 1,800+ staff. Apple Park, Bloomberg HQ. BIM-first workflow.", size: "Large", region: "Global" },
+    { name: "SOM", segment: "Architecture", products: "Revit, AutoCAD", detail: "Skidmore, Owings & Merrill. Burj Khalifa, One WTC. ~1,500 staff. Deep Revit investment.", size: "Large", region: "Global" },
+    { name: "Zaha Hadid Architects", segment: "Architecture", products: "Revit, Maya, Rhino + ADSK", detail: "Signed open letter to Autodesk over Revit pricing. Still locked in. Parametric design leaders.", size: "Large", region: "UK" },
+    { name: "BIG (Bjarke Ingels)", segment: "Architecture", products: "Revit, AutoCAD, Rhino + ADSK", detail: "~600 staff. Google HQ, Copenhill. Heavy Revit for documentation.", size: "Large", region: "Global" },
+    { name: "Grimshaw Architects", segment: "Architecture", products: "Revit, AutoCAD", detail: "Signed Revit open letter. Major UK practice (~700 staff). Heathrow, Eden Project.", size: "Large", region: "UK" },
+    { name: "Perkins&Will", segment: "Architecture", products: "Revit, AutoCAD", detail: "~2,400 staff. Healthcare, education, corporate design. Full BIM workflow.", size: "Enterprise", region: "Americas" },
+    { name: "MASS Design Group", segment: "Architecture", products: "AutoCAD, Revit, Civil 3D", detail: "Quoted: 'AutoCAD, Revit, Civil 3D play crucial role in sustainable building design.'", size: "Medium", region: "Global" },
+    { name: "Populous", segment: "Architecture", products: "Revit, AutoCAD, Navisworks", detail: "World's leading sports venue architects. 3,400+ staff. Tottenham, SoFi Stadium.", size: "Enterprise", region: "Global" },
+
+    // Construction — ACC / BuildingConnected / PlanGrid customers
+    { name: "Skanska", segment: "Construction", products: "Construction Cloud, Revit, BIM 360", detail: "Partnered with Autodesk on Digital Construction Platform. Cut construction time by 25%.", size: "Enterprise", region: "Global" },
+    { name: "Turner Construction", segment: "Construction", products: "BuildingConnected, Construction Cloud", detail: "Largest US GC ($16B+ revenue). Key BuildingConnected customer. Full ACC adoption.", size: "Enterprise", region: "Americas" },
+    { name: "Mortenson", segment: "Construction", products: "Construction Cloud, PlanGrid", detail: "Featured case study — ACC improves design collaboration, single source of truth with 3D modelling.", size: "Enterprise", region: "Americas" },
+    { name: "AECOM", segment: "Construction", products: "Revit, Civil 3D, Construction Cloud", detail: "~51,000 employees. $14.4B revenue. Infrastructure leader. BuildingConnected customer.", size: "Enterprise", region: "Global" },
+    { name: "Bouygues Construction", segment: "Construction", products: "Revit, BIM Collaborate Pro", detail: "French construction giant (€13B+ revenue). BIM Collaborate Pro for design coordination.", size: "Enterprise", region: "EMEA" },
+    { name: "Clark Construction", segment: "Construction", products: "BuildingConnected, Construction Cloud", detail: "Top 10 US GC. BuildingConnected for preconstruction bid management.", size: "Enterprise", region: "Americas" },
+    { name: "McCarthy Building", segment: "Construction", products: "BuildingConnected, PlanGrid, Pype", detail: "Major US GC. Early adopter of preconstruction and AI-powered submittal tools.", size: "Large", region: "Americas" },
+    { name: "Brasfield & Gorrie", segment: "Construction", products: "PlanGrid, Construction Cloud", detail: "Uses PlanGrid to share info and track progress. Featured customer story.", size: "Large", region: "Americas" },
+    { name: "Granite Construction", segment: "Construction", products: "PlanGrid, Construction Cloud", detail: "Heavy civil GC. PlanGrid caught $30K-$40K mistake on Highway 99 Realignment project.", size: "Large", region: "Americas" },
+
+    // Infrastructure & Engineering
+    { name: "Bechtel", segment: "Infrastructure", products: "Civil 3D, Revit, Plant 3D, Navisworks", detail: "Largest US engineering firm. $17B+ revenue. Megaprojects across energy, transport, mining.", size: "Enterprise", region: "Global" },
+    { name: "WSP", segment: "Infrastructure", products: "Civil 3D, InfraWorks, Revit", detail: "~67,000 staff. Transport, water, environmental engineering. $12B+ revenue.", size: "Enterprise", region: "Global" },
+    { name: "Jacobs", segment: "Infrastructure", products: "Civil 3D, InfraWorks, AutoCAD", detail: "~60,000 staff. Federal/defence infra, water, environmental. $16B+ revenue.", size: "Enterprise", region: "Global" },
+    { name: "Arup", segment: "Infrastructure", products: "Revit, Civil 3D, Navisworks", detail: "~18,000 staff. Sydney Opera House, CERN. Engineering consultancy leader.", size: "Enterprise", region: "Global" },
+    { name: "HDR", segment: "Infrastructure", products: "Revit, Civil 3D, InfraWorks", detail: "~12,000 staff. Healthcare, science, transport. Top 5 US design firm.", size: "Enterprise", region: "Americas" },
+
+    // Manufacturing — automotive, aerospace, industrial
+    { name: "BMW", segment: "Manufacturing", products: "VRED, Alias, AutoCAD", detail: "Uses VRED for design review & virtual showrooms. Alias for concept surface modelling.", size: "Enterprise", region: "EMEA" },
+    { name: "Kia Global Design", segment: "Manufacturing", products: "Generative design tools, VRED, Alias", detail: "Featured story: generative AI accelerating automotive design from concept to final form.", size: "Enterprise", region: "APAC" },
+    { name: "Honda", segment: "Manufacturing", products: "Fusion, generative design", detail: "Used generative design to reduce crankshaft weight by 50%. Case study on autodesk.com.", size: "Enterprise", region: "Global" },
+    { name: "GM (General Motors)", segment: "Manufacturing", products: "Generative design, Fusion", detail: "Applied generative design to make EV seat bracket 40% lighter & 20% stronger.", size: "Enterprise", region: "Americas" },
+    { name: "Airbus", segment: "Manufacturing", products: "Generative design, Netfabb", detail: "'Bionic Partition' — 45% lighter using generative design. Saves 166 tons CO2/plane/year.", size: "Enterprise", region: "EMEA" },
+    { name: "NASA", segment: "Manufacturing", products: "Inventor, Fusion, AutoCAD", detail: "Spacecraft and mission hardware design. Long-standing Autodesk user for engineering tools.", size: "Enterprise", region: "Americas" },
+    { name: "SpaceX", segment: "Manufacturing", products: "Various ADSK tools", detail: "Reported user for manufacturing and design workflows. Rapid iteration on rocket components.", size: "Enterprise", region: "Americas" },
+    { name: "Fortescue Metals", segment: "Manufacturing", products: "Inventor, AutoCAD", detail: "Mining giant. Uses Autodesk for equipment design and heavy industrial engineering.", size: "Enterprise", region: "APAC" },
+    { name: "Heirloom Carbon", segment: "Manufacturing", products: "AutoCAD Electrical", detail: "Quoted: 'Without AutoCAD Electrical, we couldn't build equipment for atmospheric CO2 capture.'", size: "Growth", region: "Americas" },
+    { name: "Claudius Peters", segment: "Manufacturing", products: "Generative design, Fusion", detail: "Reduced material use by 25% in factory parts using generative design.", size: "Large", region: "EMEA" },
+
+    // Media & Entertainment
+    { name: "Industrial Light & Magic", segment: "M&E", products: "Maya, 3ds Max, Flame", detail: "Lucasfilm's VFX studio. Maya as core pipeline tool. Transformers, Star Wars, Marvel.", size: "Enterprise", region: "Americas" },
+    { name: "Pixar", segment: "M&E", products: "Maya, USD collaboration", detail: "Collaborated on Maya development. Co-founder of OpenUSD with Autodesk. Finding Nemo, Coco.", size: "Enterprise", region: "Americas" },
+    { name: "Wētā FX", segment: "M&E", products: "Maya, MotionBuilder", detail: "7x Oscar winner. Maya & MotionBuilder 'as backbone' for performance capture. Avatar, LOTR.", size: "Enterprise", region: "APAC" },
+    { name: "Walt Disney Animation", segment: "M&E", products: "Maya", detail: "Collaborated on Maya UI development. Frozen, Moana, Encanto. Disney requested customisable Maya UI.", size: "Enterprise", region: "Americas" },
+    { name: "DreamWorks Animation", segment: "M&E", products: "Maya, Arnold", detail: "Shrek, How to Train Your Dragon, Kung Fu Panda. Maya in production pipeline.", size: "Enterprise", region: "Americas" },
+    { name: "Framestore", segment: "M&E", products: "Maya, Flame", detail: "Oscar-winning UK VFX house. Barbie VFX done in Maya. Gravity, Blade Runner 2049.", size: "Large", region: "UK" },
+    { name: "Digital Domain", segment: "M&E", products: "Maya, 3ds Max, Flame", detail: "Titanic, Avengers. Maya + 3ds Max for digital doubles and environments.", size: "Large", region: "Americas" },
+    { name: "Gearbox Software", segment: "M&E", products: "Maya, Flow Production Tracking", detail: "Borderlands — automated pipeline created 4x more cinematic gameplay in half the time.", size: "Large", region: "Americas" },
+    { name: "Naughty Dog", segment: "M&E", products: "Maya", detail: "The Last of Us — Maya for character models, facial animations, environmental assets.", size: "Large", region: "Americas" },
+    { name: "Rockstar Games", segment: "M&E", products: "Maya, 3ds Max", detail: "Red Dead Redemption 2, GTA V. Maya extensively in AAA character & environment art.", size: "Enterprise", region: "Americas" },
+    { name: "Sony Pictures Animation", segment: "M&E", products: "Maya", detail: "Spider-Man: Into the Spider-Verse, Wish Dragon. Maya core to CG pipeline.", size: "Enterprise", region: "Americas" },
+  ];
+
+  const filtered = activeSegment === "All" ? customers : customers.filter(c => c.segment === activeSegment);
+  const segmentCounts = segments.map(s => ({ seg: s, count: s === "All" ? customers.length : customers.filter(c => c.segment === s).length }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Distribution Warning */}
+      <div style={{ background: COLORS.surface, border: `1px solid #f59e0b44`, borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", marginBottom: 6 }}>Critical Distribution Note</div>
+        <div style={{ fontSize: 12, color: COLORS.textDim, lineHeight: 1.6 }}>
+          TD Synnex accounted for <span style={{ color: COLORS.white, fontWeight: 700 }}>33% of FY25 revenue</span> (~$2.0B) as master distributor, down from 39% in FY24. Autodesk is actively transitioning to a new transaction model with direct sales, the Autodesk Store, and Solution Provider partnerships. No other single customer exceeds 10%. End-customer base is extremely fragmented — 7.79M subscriptions across 180+ countries, with 2,000+ channel partners.
+        </div>
+      </div>
+
+      {/* Segment Filter */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {segmentCounts.map(({ seg, count }) => (
+          <button key={seg} onClick={() => setActiveSegment(seg)} style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${activeSegment === seg ? COLORS.accent : COLORS.border}`, background: activeSegment === seg ? COLORS.accent + "22" : "transparent", color: activeSegment === seg ? COLORS.accent : COLORS.textMuted, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>{seg} ({count})</button>
+        ))}
+      </div>
+
+      {/* Customer Table */}
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+          <thead>
+            <tr style={{ background: COLORS.surface }}>
+              {["Customer", "Segment", "ADSK Products", "Detail", "Size"].map(h => (
+                <th key={h} style={{ padding: "10px 10px", textAlign: "left", fontSize: 9, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.8, borderBottom: `1px solid ${COLORS.border}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c, i) => (
+              <tr key={c.name} style={{ borderBottom: `1px solid ${COLORS.border}22`, background: i % 2 === 0 ? "transparent" : COLORS.surface + "44" }}>
+                <td style={{ padding: "8px 10px", fontWeight: 700, color: COLORS.white, minWidth: 130, whiteSpace: "nowrap" }}>{c.name}</td>
+                <td style={{ padding: "8px 10px" }}>
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: c.segment === "Architecture" ? COLORS.accent + "22" : c.segment === "Construction" ? COLORS.green + "22" : c.segment === "Manufacturing" ? "#f59e0b22" : c.segment === "M&E" ? COLORS.purple + "22" : "#6366f122", color: c.segment === "Architecture" ? COLORS.accent : c.segment === "Construction" ? COLORS.green : c.segment === "Manufacturing" ? "#f59e0b" : c.segment === "M&E" ? COLORS.purple : "#6366f1", fontWeight: 600 }}>{c.segment}</span>
+                </td>
+                <td style={{ padding: "8px 10px", color: COLORS.textDim, fontSize: 10 }}>{c.products}</td>
+                <td style={{ padding: "8px 10px", color: COLORS.textDim, fontSize: 10, lineHeight: 1.4, maxWidth: 320 }}>{c.detail}</td>
+                <td style={{ padding: "8px 10px" }}>
+                  <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: COLORS.surface, color: COLORS.textMuted, fontWeight: 600 }}>{c.size}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* User Base Demographics - keep existing */}
+      <SectionTitle subtitle="AutoCAD user base profile (124,000+ tracked companies)">User Base Demographics</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 12, textTransform: "uppercase" }}>By Industry</div>
+          {[
+            { label: "Construction", pct: 12 },
+            { label: "Architecture & Planning", pct: 7 },
+            { label: "Machinery", pct: 7 },
+            { label: "Civil Engineering", pct: 6 },
+            { label: "Oil & Gas / Energy", pct: 4 },
+            { label: "Automotive", pct: 3 },
+            { label: "Other (fragmented)", pct: 61 },
+          ].map((d) => (
+            <div key={d.label} style={{ marginBottom: 5 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: COLORS.textDim, marginBottom: 2 }}>
+                <span>{d.label}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{d.pct}%</span>
+              </div>
+              <Bar value={d.pct} max={65} color={COLORS.accent} height={7} />
+            </div>
+          ))}
+        </div>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 12, textTransform: "uppercase" }}>By Geography</div>
+          {[
+            { label: "United States", pct: 44 },
+            { label: "United Kingdom", pct: 6 },
+            { label: "India", pct: 6 },
+            { label: "Canada", pct: 6 },
+            { label: "Germany", pct: 4 },
+            { label: "Australia", pct: 3 },
+            { label: "Rest of World", pct: 31 },
+          ].map((d) => (
+            <div key={d.label} style={{ marginBottom: 5 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: COLORS.textDim, marginBottom: 2 }}>
+                <span>{d.label}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{d.pct}%</span>
+              </div>
+              <Bar value={d.pct} max={50} color={COLORS.purple} height={7} />
+            </div>
+          ))}
+        </div>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 12, textTransform: "uppercase" }}>By Company Size</div>
+          {[
+            { label: "Small (<50 employees)", pct: 45 },
+            { label: "Medium (50-1,000)", pct: 41 },
+            { label: "Large (>1,000)", pct: 14 },
+          ].map((d) => (
+            <div key={d.label} style={{ marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: COLORS.textDim, marginBottom: 2 }}>
+                <span>{d.label}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{d.pct}%</span>
+              </div>
+              <Bar value={d.pct} max={50} color={COLORS.green} height={7} />
+            </div>
+          ))}
+          <div style={{ marginTop: 8, fontSize: 10, color: COLORS.textMuted }}>By Revenue: 67% small (&lt;$50M), 10% medium, 17% large (&gt;$1B)</div>
+          <div style={{ marginTop: 8, padding: 8, background: COLORS.surfaceLight, borderRadius: 6, fontSize: 10, color: COLORS.textDim, lineHeight: 1.5 }}>
+            <strong style={{ color: COLORS.white }}>~90% of US architecture firms</strong> use Revit for BIM deliverables. ~80% UK penetration. Extremely strong lock-in: staff training, content libraries, client expectations all tied to Revit ecosystem.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 12 }}>
+        <div style={{ fontSize: 10, color: COLORS.textMuted, lineHeight: 1.5 }}>
+          <strong style={{ color: COLORS.textDim }}>Note:</strong> 7.79M total subscriptions (FY25). 4M+ monthly active users across 180+ countries. 2,000+ global channel partners. Customer list compiled from Autodesk case studies, investor materials, BuildingConnected acquisition docs, Enlyft/6sense tracking data, and industry reporting. "Enterprise" = 1,000+ seats estimated.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinancialsTab() {
+  const revenueHistory = [
+    { fy: "FY21", rev: 3790, growth: null },
+    { fy: "FY22", rev: 4386, growth: 15.7 },
+    { fy: "FY23", rev: 5005, growth: 14.1 },
+    { fy: "FY24", rev: 5497, growth: 9.8 },
+    { fy: "FY25", rev: 6131, growth: 11.5 },
+    { fy: "FY26E", rev: 7150, growth: 16.6 },
+  ];
+  const maxRev = 7500;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <SectionTitle subtitle="Historical and forward revenue, margins, and cash flow">Financial Summary</SectionTitle>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>
+            Revenue Trajectory ($M)
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 200, paddingBottom: 4 }}>
+            {revenueHistory.map((r) => {
+              const h = (r.rev / maxRev) * 180;
+              const isEstimate = r.fy.includes("E");
+              return (
+                <div key={r.fy} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 10, color: COLORS.accent, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+                    {(r.rev / 1000).toFixed(1)}B
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: h,
+                      background: isEstimate
+                        ? `repeating-linear-gradient(45deg, ${COLORS.accent}40, ${COLORS.accent}40 4px, transparent 4px, transparent 8px)`
+                        : `linear-gradient(180deg, ${COLORS.accent}, ${COLORS.accent}60)`,
+                      borderRadius: "4px 4px 0 0",
+                      border: isEstimate ? `1px dashed ${COLORS.accent}60` : "none",
+                    }}
+                  />
+                  <div style={{ fontSize: 10, color: COLORS.textMuted }}>{r.fy}</div>
+                  {r.growth && (
+                    <div style={{ fontSize: 9, color: COLORS.green, fontFamily: "'JetBrains Mono', monospace" }}>+{r.growth}%</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>
+            Segment Revenue 3-Year Trend ($M)
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                <th style={{ textAlign: "left", padding: "6px 0", color: COLORS.textMuted, fontWeight: 600 }}>Segment</th>
+                <th style={{ textAlign: "right", padding: "6px 0", color: COLORS.textMuted, fontWeight: 600 }}>FY23</th>
+                <th style={{ textAlign: "right", padding: "6px 0", color: COLORS.textMuted, fontWeight: 600 }}>FY24</th>
+                <th style={{ textAlign: "right", padding: "6px 0", color: COLORS.textMuted, fontWeight: 600 }}>FY25</th>
+                <th style={{ textAlign: "right", padding: "6px 0", color: COLORS.textMuted, fontWeight: 600 }}>YoY</th>
+              </tr>
+            </thead>
+            <tbody>
+              {segmentData.labels.map((label, i) => (
+                <tr key={label} style={{ borderBottom: `1px solid ${COLORS.border}22` }}>
+                  <td style={{ padding: "8px 0", color: segmentColors[i], fontWeight: 600 }}>{label}</td>
+                  <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.textDim, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {segmentData.fy23[i].toLocaleString()}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.textDim, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {segmentData.fy24[i].toLocaleString()}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.white, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {segmentData.fy25[i].toLocaleString()}
+                  </td>
+                  <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.green, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                    +{segmentData.yoyGrowthFY25[i]}%
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: `2px solid ${COLORS.border}` }}>
+                <td style={{ padding: "8px 0", color: COLORS.white, fontWeight: 700 }}>Total</td>
+                <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.textDim, fontFamily: "'JetBrains Mono', monospace" }}>5,005</td>
+                <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.textDim, fontFamily: "'JetBrains Mono', monospace" }}>5,497</td>
+                <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.white, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>6,131</td>
+                <td style={{ textAlign: "right", padding: "8px 0", color: COLORS.green, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>+11.5%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <SectionTitle subtitle="Margin progression and cash generation">Profitability & Cash Flow</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        {[
+          {
+            title: "Operating Margin Trajectory",
+            items: [
+              { label: "GAAP Op Margin (Q3 FY26)", value: "25.0%", note: "+330bps YoY" },
+              { label: "Non-GAAP Op Margin (Q3 FY26)", value: "38.0%", note: "+120bps YoY" },
+              { label: "FY26E Non-GAAP Op Margin", value: "~37.5%", note: "Guided" },
+              { label: "FY26E Underlying Op Margin", value: "~40.5%", note: "Ex-NTM impact" },
+              { label: "LT Target (FY29)", value: "41%", note: "Non-GAAP" },
+            ],
+          },
+          {
+            title: "Cash Generation",
+            items: [
+              { label: "Q3 FY26 FCF", value: "$430M", note: "+116% YoY" },
+              { label: "FY26E FCF Guidance", value: "$2.26-2.29B", note: "" },
+              { label: "FY25 FCF", value: "~$1.5B", note: "" },
+              { label: "FY26 Buybacks", value: "~$1.3B", note: "+50% vs FY25" },
+              { label: "Cash & Securities", value: "$2.15B", note: "FY25 end" },
+            ],
+          },
+          {
+            title: "Key Subscription Metrics",
+            items: [
+              { label: "Total Subscriptions", value: "7.79M", note: "FY25" },
+              { label: "Recurring Revenue %", value: "97%", note: "" },
+              { label: "NR3", value: ">110%", note: "CC basis" },
+              { label: "RPO", value: "$7.4B", note: "+20% YoY" },
+              { label: "ARR (Q3 FY26)", value: "$6.86B", note: "+17% YoY" },
+            ],
+          },
+        ].map((section) => (
+          <div
+            key={section.title}
+            style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 20 }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 14, textTransform: "uppercase" }}>
+              {section.title}
+            </div>
+            {section.items.map((item) => (
+              <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${COLORS.border}22` }}>
+                <span style={{ fontSize: 12, color: COLORS.textDim }}>{item.label}</span>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.white, fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</span>
+                  {item.note && <div style={{ fontSize: 10, color: COLORS.green }}>{item.note}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.6 }}>
+          <strong style={{ color: COLORS.textDim }}>Sources:</strong> Autodesk 10-K FY25, Q3 FY26 earnings release (Nov 2025), Investor Day materials, MarketsandMarkets, Mordor Intelligence, 6sense, Enlyft, company filings. FY ends January 31. All market share estimates are approximate based on multiple industry sources. Revenue figures in USD.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AutodeskDashboard />);
+</script>
+</body>
+</html>
